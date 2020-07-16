@@ -3,7 +3,7 @@
 
 The benefit of this agent instrumentation technique is there is no need to modify your app image, or install any software on your k8s nodes.
 
-## Explanation of Files
+### Explanation of Files
 
 `python-app.yaml` is the original deployment manifest prior to adding AppDynamics.
 
@@ -11,7 +11,7 @@ The benefit of this agent instrumentation technique is there is no need to modif
 
 `agent-startup-config.yaml` is the namespace-wide Python agent configuration
 
-## Explanation of Steps
+### Explanation of Steps
 
 1. Create a Python Agent image
 
@@ -26,6 +26,8 @@ The benefit of this agent instrumentation technique is there is no need to modif
    * Pull global agent configuration from `agent-startup-config` config map
    * The `appd-agent-python` volume mount, which contains the Python agent files
    * InitContainer which contains the necessary agent files and copies them into the `appd-agent-python` volume mount
+
+### Run this example app
 
 1. Run the following commands to setup the Kubernetes namespace, set the AppDynamics account key secret, and apply all of the files in this directory:
 
