@@ -5,8 +5,10 @@ The benefit of this agent instrumentation technique is there is no need to modif
 
 ## Explanation of Files
 
-`python-app.yaml` is the original deployment manifest.
+`python-app.yaml` is the original deployment manifest prior to adding AppDynamics.
+
 `python-app-instrumented.yaml` is a copy of python-app.yaml with the changes necessary to instrument with AppDynamics
+
 `agent-startup-config.yaml` is the namespace-wide Python agent configuration
 
 ## Explanation of Steps
