@@ -1,0 +1,98 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flask-app
+spec:
+  selector:
+      matchLabels:
+        name: flask-app
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: flask-app
+    spec:
+      serviceAccountName: appd-account
+      restartPolicy: Always
+      containers:
+        - name: webapp
+          image: sashaz/python-app:v1
+          imagePullPolicy: Always
+          resources:
+            limits:
+              cpu: 200m
+              memory: 900M
+            requests:
+              cpu: 100m
+              memory: 600M
+          ports:
+          - containerPort: 8080
+          
+          # Override app container entrypoint with AppDynamics Python Agent startup
+          command: ["/opt/appdynamics/start-with-appd.sh"]
+
+          env:
+            # Declare the original app image ENTRYPOINT or CMD
+            # The start-with-appd.sh script runs this command after starting the agent
+          - name: APP_ENTRY_POINT
+            value: "python /app/app/app.py"
+
+            # Set deployment-specific config for AppDynamics Python Agent
+            # Remaining global env vars are set in agent-startup-config config map
+          - name: APPD_ACCOUNT_ACCESS_KEY
+            valueFrom:
+              secretKeyRef:
+                key: appd-key
+                name: appd-secret
+          - name: APPD_TIER_NAME
+            value: flask-app
+          - name: APPD_NODE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+
+          envFrom:
+          # AppDynamics start-with-appd.sh script configuration
+          - configMapRef:
+              name: agent-startup-config
+      
+          # Mount volume that contains Python agent script
+          volumeMounts:
+          - mountPath: /opt/appdynamics
+            name: appd-agent-python
+      
+
+      # AppDynamics Python Agent loader script
+      initContainers:
+      - command:
+        - cp
+        - -a
+        - start-with-appd.sh
+        - agent.cfg
+        - /opt/temp
+        image: docker.io/konrness/appdynamics-python-agent:latest
+        imagePullPolicy: Always
+        name: appd-agent-attach
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /opt/temp
+          name: appd-agent-python
+
+      # Volume to hold AppDynamics agent from InitContainer
+      volumes:
+      - emptyDir: {}
+        name: appd-agent-python
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: flask-app
+spec:
+  selector:
+    name: flask-app
+  ports:
+  - name: "8080"
+    port: 8080
+    targetPort: 8080
+  type: LoadBalancer
